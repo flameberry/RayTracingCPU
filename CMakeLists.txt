@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.10)
 project(RayTracing VERSION 0.1.0)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED On)
+
 set(SOURCE_DIR ${CMAKE_SOURCE_DIR})
 
 include(Dependencies.cmake)
@@ -12,10 +15,13 @@ enable_testing()
 file(GLOB_RECURSE SRC_FILES ${SOURCE_DIR}/src/*.cpp ${SOURCE_DIR}/src/*.h)
 add_executable(RayTracing ${SRC_FILES})
 
+target_compile_definitions(RayTracing PRIVATE "GLFW_INCLUDE_NONE")
+
 target_include_directories(RayTracing PRIVATE ${GRAPHICS_INCLUDE_DIRS})
 
 add_subdirectory(vendor/GLFW)
 add_subdirectory(vendor/Glad)
+add_subdirectory(vendor/imgui)
 
 target_link_libraries(RayTracing PRIVATE ${GRAPHICS_LIBS})
 

@@ -1,5 +1,5 @@
 # OpenGL Helper Libs
-set(GRAPHICS_LIBS glfw Glad)
+set(GRAPHICS_LIBS glfw Glad imgui)
 
 if(APPLE)
     # Inbuilt mac frameworks required for GLFW
@@ -16,8 +16,7 @@ endif()
 # All Include Dirs needed for the project
 set(GRAPHICS_INCLUDE_DIRS
     ${SOURCE_DIR}/vendor
+    ${SOURCE_DIR}/vendor/imgui
     ${SOURCE_DIR}/vendor/GLFW/include
     ${SOURCE_DIR}/vendor/Glad/include
-    ${SOURCE_DIR}/vendor/glm
-    ${SOURCE_DIR}/vendor/freetype/include
 )
