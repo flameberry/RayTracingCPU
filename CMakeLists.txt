@@ -15,6 +15,8 @@ enable_testing()
 file(GLOB_RECURSE SRC_FILES ${SOURCE_DIR}/src/*.cpp ${SOURCE_DIR}/src/*.h)
 add_executable(RayTracing ${SRC_FILES})
 
+set_custom_build_properties(RayTracing)
+
 target_compile_definitions(RayTracing PRIVATE "GLFW_INCLUDE_NONE")
 
 target_include_directories(RayTracing PRIVATE ${GRAPHICS_INCLUDE_DIRS})

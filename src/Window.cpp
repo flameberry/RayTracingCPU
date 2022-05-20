@@ -22,7 +22,7 @@ namespace Flameberry {
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
 #endif
 
-        m_Window = glfwCreateWindow(width, height, "FlameUI", NULL, NULL);
+        m_Window = glfwCreateWindow(width, height, title, NULL, NULL);
 
         if (!m_Window)
             std::cout << "Window is null!" << std::endl;

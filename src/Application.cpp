@@ -4,66 +4,81 @@
 #include <glad/glad.h>
 
 namespace Flameberry {
-    uint32_t CreateTexture()
-    {
-        uint32_t* data = new uint32_t[100 * 100];
-        for (uint32_t i = 0; i < 100 * 100; i++)
-            data[i] = 0xffff00ff;
-
-        uint32_t textureId;
-        glGenTextures(1, &textureId);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, textureId);
-
-        // Set parameters to determine how the texture is resized
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        // Set parameters to determine how the texture wraps at edges
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 100, 100, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-        return textureId;
-    }
-
     Application* Application::s_App;
     Application::Application()
     {
         s_App = this;
         m_ImGuiLayer.OnAttach();
+        m_ViewportWidth = 500;
+        m_ViewportHeight = 500;
+
+        glGenTextures(1, &m_RenderImageTextureId);
+        Render();
     }
 
     void Application::Run()
     {
-        // Our state
-        bool show_demo_window = true;
-        bool show_another_window = false;
-        ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
-        uint32_t textureId = CreateTexture();
+        bool shouldRender = false;
 
         while (m_Window.IsRunning())
         {
             m_ImGuiLayer.OnBegin();
 
-            ImGui::Begin("Viewport");
-            ImGui::Image((ImTextureID)static_cast<uintptr_t>(textureId), ImVec2(100.0f, 100.0f));
+            ImGui::Begin("Settings");
+            // ImGui::Text("Last render: %.3fms", duration * 1000.0f);
+            if (ImGui::Button("Render"))
+            {
+                shouldRender = true;
+                Render();
+            }
+            else
+            {
+                shouldRender = false;
+            }
             ImGui::End();
 
-            ImGui::Begin("Settings");
-            if (ImGui::Button("Render"))
-                std::cout << "Rendering...\n";
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+            ImGui::Begin("Viewport");
+            if (shouldRender)
+            {
+                m_ViewportWidth = ImGui::GetContentRegionAvail().x;
+                m_ViewportHeight = ImGui::GetContentRegionAvail().y;
+            }
+            ImGui::Image((ImTextureID)static_cast<uintptr_t>(m_RenderImageTextureId), ImVec2((float)m_ViewportWidth, (float)m_ViewportHeight));
             ImGui::End();
+            ImGui::PopStyleVar();
 
             m_ImGuiLayer.OnEnd();
             m_Window.OnUpdate();
         }
     }
 
+    void Application::Render()
+    {
+        m_RenderImageData = new uint32_t[m_ViewportWidth * m_ViewportHeight];
+        for (uint32_t i = 0; i < m_ViewportWidth * m_ViewportHeight; i++)
+            m_RenderImageData[i] = 0xff00ffff;
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, m_RenderImageTextureId);
+
+        // Set parameters to determine how the texture is resized
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        // Set parameters to determine how the texture wraps at edges
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_ViewportWidth, m_ViewportHeight, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, m_RenderImageData);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        delete[] m_RenderImageData;
+    }
+
     Application::~Application()
     {
         m_ImGuiLayer.OnDetach();
+        glDeleteTextures(1, &m_RenderImageTextureId);
         glfwTerminate();
     }
 }

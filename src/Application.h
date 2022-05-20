@@ -9,6 +9,7 @@ namespace Flameberry {
         Application();
         ~Application();
 
+        void Render();
         Window& GetMainWindow() { return m_Window; }
         static Application* GetApp() { return s_App; }
 
@@ -16,6 +17,10 @@ namespace Flameberry {
     private:
         Window m_Window;
         ImGuiLayer m_ImGuiLayer;
+
+        uint32_t m_ViewportWidth, m_ViewportHeight;
+        uint32_t* m_RenderImageData;
+        uint32_t m_RenderImageTextureId;
     private:
         static Application* s_App;
     };
