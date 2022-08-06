@@ -17,9 +17,7 @@ namespace Flameberry {
     private:
         Window m_Window;
         Renderer m_CoreRenderer;
-
         ImGuiLayer m_ImGuiLayer;
-
         uint32_t m_ViewportWidth, m_ViewportHeight;
     private:
         static Application* s_App;

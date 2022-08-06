@@ -1,25 +1,21 @@
 #pragma once
 #include <glm/glm.hpp>
 #include "Ray.h"
+#include "Hittable.h"
 
-template<int T>
-struct Intersection {
-    bool did_hit = false;
-    glm::vec3 points[T];
-};
-
-namespace Flameberry
-{
+namespace Flameberry {
     class Sphere
     {
     public:
-        Sphere(const glm::vec3& center, float radius);
+        Sphere(const glm::vec3& center, float radius, const glm::vec3& color = { 1, 0, 1 });
         ~Sphere();
 
-        Intersection<2> Hit(Ray& ray);
-        glm::vec3 GetNormalAt(const glm::vec3& point);
+        // returns sphere color if ray has hit the sphere else returns black
+        glm::vec4 Hit(Ray& ray);
+        void SetColor(const glm::vec3& color) { m_SphereColor = color; }
     private:
         glm::vec3 m_Center;
         float m_Radius;
+        glm::vec3 m_SphereColor;
     };
 }

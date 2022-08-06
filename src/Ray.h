@@ -1,10 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 
-#define UNIT(vector) vector /  sqrt(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z)
-
-namespace Flameberry
-{
+namespace Flameberry {
     class Ray
     {
     public:

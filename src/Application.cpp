@@ -4,7 +4,6 @@
 #include <glad/glad.h>
 #include "Sphere.h"
 
-
 namespace Flameberry {
     Application* Application::s_App;
     Application::Application()
@@ -45,7 +44,9 @@ namespace Flameberry {
             }
             ImGui::Image(
                 (ImTextureID)static_cast<uintptr_t>(m_CoreRenderer.GetRenderImageTextureId()),
-                ImVec2((float)m_CoreRenderer.GetRenderImageSize().x, (float)m_CoreRenderer.GetRenderImageSize().y)
+                ImVec2((float)m_CoreRenderer.GetRenderImageSize().x, (float)m_CoreRenderer.GetRenderImageSize().y),
+                ImVec2{ 0, 1 },
+                ImVec2{ 1, 0 }
             );
             ImGui::End();
             ImGui::PopStyleVar();

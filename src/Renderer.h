@@ -1,15 +1,15 @@
 #pragma once
 #include <glm/glm.hpp>
+#include "Hittable.h"
 
-namespace Flameberry
-{
+namespace Flameberry {
     class Renderer
     {
     public:
         Renderer();
         ~Renderer();
         void Render(const glm::vec2& imageSize);
-        uint32_t GetRenderedPixelColor(int x, int y);
+        uint32_t CalculatePixelColor(int x, int y);
         uint32_t GetRenderImageTextureId() { return m_RenderImageTextureId; }
         glm::vec2& GetRenderImageSize() { return m_RenderImageSize; }
     private:

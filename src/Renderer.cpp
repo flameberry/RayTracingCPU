@@ -14,14 +14,13 @@ void printVec(const glm::vec3& vec)
 
 uint32_t ToHex(const glm::vec4& color_in_vec4)
 {
-    uint32_t hex = ((((int)color_in_vec4.r * 255) & 0xff) << 24) + ((((int)color_in_vec4.g * 255) & 0xff) << 16) + ((((int)color_in_vec4.b * 255) & 0xff) << 8) + (((int)color_in_vec4.a * 255) & 0xff);
+    uint32_t hex = ((uint32_t)(color_in_vec4.r * 255) << 24) + ((uint32_t)(color_in_vec4.g * 255) << 16) + ((uint32_t)(color_in_vec4.b * 255) << 8) + (uint32_t)(color_in_vec4.a * 255);
     return hex;
 }
 
-namespace Flameberry
-{
+namespace Flameberry {
     Renderer::Renderer()
-        : m_RenderImageTextureId(0), m_RenderImageData(nullptr), m_RenderImageSize(500, 500), m_CameraPos(0.0f)
+        : m_RenderImageTextureId(0), m_RenderImageData(nullptr), m_RenderImageSize(500, 500), m_CameraPos(0.0f, 0.0f, 1.0f)
     {
         m_AspectRatio = m_RenderImageSize.x / m_RenderImageSize.y;
         m_BottomLeft = { -m_AspectRatio, -1.0f, -1.0f };
@@ -33,16 +32,12 @@ namespace Flameberry
         glDeleteTextures(1, &m_RenderImageTextureId);
     }
 
-    uint32_t Renderer::GetRenderedPixelColor(int x, int y)
+    uint32_t Renderer::CalculatePixelColor(int x, int y)
     {
-        Flameberry::Ray ray(m_CameraPos, m_BottomLeft + glm::vec3{ x * 2.0f * m_AspectRatio / (m_RenderImageSize.x - 1.0f), y * 2.0f / (m_RenderImageSize.y - 1.0f), -1.0f });
-        Sphere sphere({ 0.0f, 0.0f, -1.0f }, 0.3f);
-        auto intersection = sphere.Hit(ray);
-
-        if (intersection.did_hit)
-            return PINK;
-        else
-            return BLACK;
+        Flameberry::Ray ray(m_CameraPos, m_BottomLeft + glm::vec3{ x * 2.0f * m_AspectRatio / (m_RenderImageSize.x - 1.0f), y * 2.0f / (m_RenderImageSize.y - 1.0f), 0.0f });
+        Sphere sphere({ 0.0f, 0.0f, 0.0f }, 0.5f);
+        uint32_t color = ToHex(sphere.Hit(ray));
+        return color;
     }
 
     void Renderer::Render(const glm::vec2& imageSize)
@@ -62,7 +57,10 @@ namespace Flameberry
                 x = 0;
             }
 
-            m_RenderImageData[i] = GetRenderedPixelColor(x, y);
+            // Actual calculation of pixel data
+            m_RenderImageData[i] = CalculatePixelColor(x, y);
+            // -------------------------
+
             x++;
         }
 
