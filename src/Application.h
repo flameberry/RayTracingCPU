@@ -11,7 +11,7 @@ namespace Flameberry {
         ~Application();
 
         Window& GetMainWindow() { return m_Window; }
-        static Application* GetApp() { return s_App; }
+        static Application& GetApp() { return *s_App; }
 
         void Run();
     private:
