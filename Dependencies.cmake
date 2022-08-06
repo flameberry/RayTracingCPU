@@ -19,4 +19,5 @@ set(GRAPHICS_INCLUDE_DIRS
     ${SOURCE_DIR}/vendor/imgui
     ${SOURCE_DIR}/vendor/GLFW/include
     ${SOURCE_DIR}/vendor/Glad/include
+    ${SOURCE_DIR}/vendor/glm
 )
