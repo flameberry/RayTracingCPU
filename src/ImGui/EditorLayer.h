@@ -1,19 +1,26 @@
 #pragma once
 #include "../Renderer.h"
+#include "CameraSettingsPanel.h"
 
 namespace Flameberry {
     class EditorLayer
     {
     public:
-        static void OnAttach();
-        static void OnDetach();
-        static void OnImGuiRender();
-        static void SetDarkThemeColors();
+        EditorLayer();
+        ~EditorLayer();
+        void OnAttach();
+        void OnDetach();
+        void OnImGuiRender();
+        void SetDarkThemeColors();
     private:
-        static void OnImGuiBegin();
-        static void OnImGuiEnd();
+        void OnImGuiBegin();
+        void OnImGuiEnd();
     private:
-        static std::shared_ptr<Renderer> s_CoreRenderer;
-        static uint32_t s_ViewportWidth, s_ViewportHeight;
+        std::shared_ptr<Renderer> m_CoreRenderer;
+        Camera m_Camera;
+        CameraSettingsPanel m_CameraSettingsPanel;
+
+        float m_SphereColor[4] = { 1.0f, 0.0f, 1.0f, 1.0f };
+        uint32_t m_ViewportWidth, m_ViewportHeight;
     };
 }

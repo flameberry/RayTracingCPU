@@ -9,7 +9,7 @@ namespace Flameberry
     {
     }
 
-    bool Sphere::Hit(Ray& ray, glm::vec4& outColor)
+    bool Sphere::Hit(Ray& ray, glm::vec4& outColor, float& closest_t)
     {
         static float a, b, c, determinant;
         a = glm::dot(ray.direction(), ray.direction());
@@ -22,14 +22,16 @@ namespace Flameberry
         if (determinant < 0)
             return false;
 
-        float t1 = (-b + sqrt(determinant)) / (2.0f * a);
-        float t2 = (-b - sqrt(determinant)) / (2.0f * a);
+        // float t = (-b + sqrt(determinant)) / (2.0f * a);
+        float t = (-b - sqrt(determinant)) / (2.0f * a);
 
-        glm::vec3 intersection_farther = ray.origin() + t1 * ray.direction();
-        glm::vec3 intersection_closer = ray.origin() + t2 * ray.direction();
+        if (t > closest_t || t < 0)
+            return false;
+        closest_t = t;
 
-        glm::vec3 normal = glm::normalize(intersection_closer - m_Center);
+        glm::vec3 hitPoint = ray.origin() + t * ray.direction();
 
+        glm::vec3 normal = glm::normalize(hitPoint - m_Center);
         glm::vec3 lightDir = glm::normalize(glm::vec3(-1, -1, -1));
 
         float d = glm::max(glm::dot(normal, -lightDir), 0.0f); // == cos(x) // x = angle between normal and -lightDir

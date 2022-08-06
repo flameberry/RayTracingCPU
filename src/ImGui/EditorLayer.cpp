@@ -6,15 +6,29 @@
 #include <glad/glad.h>
 #include "../Sphere.h"
 #include <chrono>
+#include <imgui/imgui_internal.h>
 
 namespace Flameberry {
-    std::shared_ptr<Renderer> EditorLayer::s_CoreRenderer;
-    uint32_t EditorLayer::s_ViewportWidth = 500, EditorLayer::s_ViewportHeight = 500;
+    EditorLayer::EditorLayer()
+        : m_ViewportWidth(500), m_ViewportHeight(500)
+    {
+        CameraInfo cameraInfo{};
+        cameraInfo.aspectRatio = m_ViewportWidth / m_ViewportHeight;
+        cameraInfo.verticalFOV = 60.0f;
+        cameraInfo.cameraOrigin = glm::vec3(0, 0, 1);
+        cameraInfo.cameraDirection = glm::vec3(0, 0, -1);
+        cameraInfo.upDir = glm::vec3(0, 1, 0);
+
+        m_Camera = Camera(cameraInfo);
+        m_CameraSettingsPanel = CameraSettingsPanel(cameraInfo);
+    }
+
+    EditorLayer::~EditorLayer()
+    {
+    }
 
     void EditorLayer::OnAttach()
     {
-        s_CoreRenderer = std::make_shared<Renderer>();
-
         // Setup Dear ImGui context
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
@@ -46,6 +60,8 @@ namespace Flameberry {
         // Setup Platform/Renderer bindings
         ImGui_ImplGlfw_InitForOpenGL(window, true);
         ImGui_ImplOpenGL3_Init("#version 410");
+
+        m_CoreRenderer = std::make_shared<Renderer>();
     }
 
     void EditorLayer::OnDetach()
@@ -62,31 +78,42 @@ namespace Flameberry {
 
         bool shouldRender = false;
         static float renderTime = 0.0f;
+        static bool realTimeRendering = true;
 
         ImGui::Begin("Settings");
         ImGui::Text("Last render: %.3fms", renderTime * 0.001f * 0.001f);
-        if (ImGui::Button("Render"))
-            shouldRender = true;
-        else
-            shouldRender = false;
+        ImGui::Checkbox("Real Time Rendering ", &realTimeRendering);
+        if (!realTimeRendering)
+            shouldRender = ImGui::Button("Render");
+        ImGui::Separator();
+        ImGui::ColorPicker4("Sphere Color", m_SphereColor);
         ImGui::End();
+
+        m_CameraSettingsPanel.OnImGuiRender();
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
         ImGui::Begin("Viewport");
-        if (shouldRender)
+        if (realTimeRendering || shouldRender)
         {
             auto start = std::chrono::high_resolution_clock::now();
 
-            s_ViewportWidth = ImGui::GetContentRegionAvail().x;
-            s_ViewportHeight = ImGui::GetContentRegionAvail().y;
-            s_CoreRenderer->Add(Sphere::Create({ 0.0f, 0.0f, 0.0f }, 0.5f));
-            s_CoreRenderer->Render({ s_ViewportWidth, s_ViewportHeight });
+            m_ViewportWidth = ImGui::GetContentRegionAvail().x;
+            m_ViewportHeight = ImGui::GetContentRegionAvail().y;
+
+            m_Camera.SetAspectRatio((float)m_ViewportWidth / (float)m_ViewportHeight);
+            m_Camera.SetCameraPosition(m_CameraSettingsPanel.GetCameraPosition());
+            m_Camera.SetVerticalFOV(m_CameraSettingsPanel.GetCameraFOV());
+            m_Camera.Invalidate();
+
+            m_CoreRenderer->Add(Sphere::Create({ 0.0f, 0.0f, 0.0f }, 0.2f, glm::vec4(m_SphereColor[0], m_SphereColor[1], m_SphereColor[2], m_SphereColor[3])));
+            m_CoreRenderer->Add(Sphere::Create({ 0.0f, -100.5f, 0.0f }, 100.0f));
+            m_CoreRenderer->Render({ m_ViewportWidth, m_ViewportHeight }, m_Camera);
 
             renderTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - start).count();
         }
         ImGui::Image(
-            (ImTextureID)static_cast<uintptr_t>(s_CoreRenderer->GetRenderImageTextureId()),
-            ImVec2((float)s_CoreRenderer->GetRenderImageSize().x, (float)s_CoreRenderer->GetRenderImageSize().y),
+            (ImTextureID)static_cast<uintptr_t>(m_CoreRenderer->GetRenderImageTextureId()),
+            ImVec2((float)m_CoreRenderer->GetRenderImageSize().x, (float)m_CoreRenderer->GetRenderImageSize().y),
             ImVec2{ 0, 1 },
             ImVec2{ 1, 0 }
         );

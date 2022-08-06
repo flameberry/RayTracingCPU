@@ -7,6 +7,6 @@ namespace Flameberry {
     public:
         Hittable() = default;
         virtual ~Hittable() = default;
-        virtual bool Hit(Ray& ray, glm::vec4& outColor) = 0;
+        virtual bool Hit(Ray& ray, glm::vec4& outColor, float& closest_t) = 0;
     };
 }

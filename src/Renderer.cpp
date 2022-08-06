@@ -32,29 +32,28 @@ namespace Flameberry {
         glDeleteTextures(1, &m_RenderImageTextureId);
     }
 
-    uint32_t Renderer::CalculatePixelColor(int x, int y)
+    uint32_t Renderer::CalculatePixelColor(int x, int y, const Camera& camera)
     {
-        // Ray ray(m_CameraPos, m_BottomLeft + glm::vec3{ x * 2.0f * m_AspectRatio / (m_RenderImageSize.x - 1.0f), y * 2.0f / (m_RenderImageSize.y - 1.0f), 0.0f });
-        // Sphere sphere({ 0.0f, 0.0f, 0.0f }, 0.5f);
-        // uint32_t color = ToHex(sphere.Hit(ray));
-        // return color;
+        float closest_t = std::numeric_limits<float>::infinity();
+        bool hitAnything = false;
 
         glm::vec4 pixelColor{ 1.0f };
-        Ray ray(m_CameraPos, m_BottomLeft + glm::vec3{ x * 2.0f * m_AspectRatio / (m_RenderImageSize.x - 1.0f), y * 2.0f / (m_RenderImageSize.y - 1.0f), 0.0f });
+        Ray ray = camera.GetRay((float)x / (m_RenderImageSize.x - 1.0f), (float)y / (m_RenderImageSize.y - 1.0f));
         for (const auto& hittable : m_HittableObjects)
         {
-            if (hittable->Hit(ray, pixelColor))
-                return ToHex(pixelColor);
+            if (hittable->Hit(ray, pixelColor, closest_t))
+                hitAnything = true;
         }
+        if (hitAnything)
+            return ToHex(pixelColor);
         return BLACK;
     }
 
-    void Renderer::Render(const glm::vec2& imageSize)
+    void Renderer::Render(const glm::vec2& imageSize, const Camera& camera)
     {
         m_RenderImageSize = imageSize;
         m_RenderImageData = new uint32_t[m_RenderImageSize.x * m_RenderImageSize.y];
         m_AspectRatio = m_RenderImageSize.x / m_RenderImageSize.y;
-        m_BottomLeft = { -m_AspectRatio, -1.0f, -1.0f };
 
         // Working with pixel data
         uint32_t x = 0, y = 0;
@@ -67,7 +66,7 @@ namespace Flameberry {
             }
 
             // Actual calculation of pixel data
-            m_RenderImageData[i] = CalculatePixelColor(x, y);
+            m_RenderImageData[i] = CalculatePixelColor(x, y, camera);
             // -------------------------
 
             x++;

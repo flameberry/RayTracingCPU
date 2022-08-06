@@ -5,12 +5,12 @@ namespace Flameberry {
     Application::Application()
     {
         s_App = this;
-        EditorLayer::OnAttach();
+        m_EditorLayer.OnAttach();
     }
 
     Application::~Application()
     {
-        EditorLayer::OnDetach();
+        m_EditorLayer.OnDetach();
         glfwTerminate();
     }
 
@@ -18,7 +18,7 @@ namespace Flameberry {
     {
         while (m_Window.IsRunning())
         {
-            EditorLayer::OnImGuiRender();
+            m_EditorLayer.OnImGuiRender();
             m_Window.OnUpdate();
         }
     }

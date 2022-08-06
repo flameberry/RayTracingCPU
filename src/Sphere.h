@@ -11,7 +11,7 @@ namespace Flameberry {
         Sphere(const glm::vec3& center, float radius, const glm::vec3& color = { 1, 0, 1 });
         ~Sphere();
 
-        bool Hit(Ray& ray, glm::vec4& outColor) override;
+        bool Hit(Ray& ray, glm::vec4& outColor, float& closest_t) override;
         void SetColor(const glm::vec3& color) { m_SphereColor = color; }
     private:
         glm::vec3 m_Center;

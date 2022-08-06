@@ -13,6 +13,7 @@ namespace Flameberry {
         void Run();
     private:
         Window m_Window;
+        EditorLayer m_EditorLayer;
     private:
         static Application* s_App;
     };
