@@ -13,17 +13,16 @@ include(CTest)
 enable_testing()
 
 file(GLOB_RECURSE SRC_FILES ${SOURCE_DIR}/src/*.cpp ${SOURCE_DIR}/src/*.h)
-add_executable(RayTracing ${SRC_FILES})
+add_executable(RayTracing ${SRC_FILES} ${IMGUI_SRC})
 
 set_custom_build_properties(RayTracing)
 
-target_compile_definitions(RayTracing PRIVATE "GLFW_INCLUDE_NONE")
+target_compile_definitions(RayTracing PRIVATE GLFW_INCLUDE_NONE IMGUI_IMPL_OPENGL_LOADER_GLAD)
 
 target_include_directories(RayTracing PRIVATE ${GRAPHICS_INCLUDE_DIRS})
 
 add_subdirectory(vendor/GLFW)
 add_subdirectory(vendor/Glad)
-add_subdirectory(vendor/imgui)
 
 target_link_libraries(RayTracing PRIVATE ${GRAPHICS_LIBS})
 
