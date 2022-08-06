@@ -1,14 +1,20 @@
-#include "ImGuiLayer.h"
+#include "EditorLayer.h"
 #include <imgui.h>
 #include <backends/imgui_impl_opengl3.h>
 #include <backends/imgui_impl_glfw.h>
 #include "../Application.h"
 #include <glad/glad.h>
+#include "../Sphere.h"
+#include <chrono>
 
-namespace Flameberry
-{
-    void ImGuiLayer::OnAttach()
+namespace Flameberry {
+    std::shared_ptr<Renderer> EditorLayer::s_CoreRenderer;
+    uint32_t EditorLayer::s_ViewportWidth = 500, EditorLayer::s_ViewportHeight = 500;
+
+    void EditorLayer::OnAttach()
     {
+        s_CoreRenderer = std::make_shared<Renderer>();
+
         // Setup Dear ImGui context
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
@@ -42,7 +48,7 @@ namespace Flameberry
         ImGui_ImplOpenGL3_Init("#version 410");
     }
 
-    void ImGuiLayer::OnDetach()
+    void EditorLayer::OnDetach()
     {
         // Cleanup
         ImGui_ImplOpenGL3_Shutdown();
@@ -50,7 +56,47 @@ namespace Flameberry
         ImGui::DestroyContext();
     }
 
-    void ImGuiLayer::OnBegin()
+    void EditorLayer::OnImGuiRender()
+    {
+        OnImGuiBegin();
+
+        bool shouldRender = false;
+        static float renderTime = 0.0f;
+
+        ImGui::Begin("Settings");
+        ImGui::Text("Last render: %.3fms", renderTime * 0.001f * 0.001f);
+        if (ImGui::Button("Render"))
+            shouldRender = true;
+        else
+            shouldRender = false;
+        ImGui::End();
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+        ImGui::Begin("Viewport");
+        if (shouldRender)
+        {
+            auto start = std::chrono::high_resolution_clock::now();
+
+            s_ViewportWidth = ImGui::GetContentRegionAvail().x;
+            s_ViewportHeight = ImGui::GetContentRegionAvail().y;
+            s_CoreRenderer->Add(Sphere::Create({ 0.0f, 0.0f, 0.0f }, 0.5f));
+            s_CoreRenderer->Render({ s_ViewportWidth, s_ViewportHeight });
+
+            renderTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - start).count();
+        }
+        ImGui::Image(
+            (ImTextureID)static_cast<uintptr_t>(s_CoreRenderer->GetRenderImageTextureId()),
+            ImVec2((float)s_CoreRenderer->GetRenderImageSize().x, (float)s_CoreRenderer->GetRenderImageSize().y),
+            ImVec2{ 0, 1 },
+            ImVec2{ 1, 0 }
+        );
+        ImGui::End();
+        ImGui::PopStyleVar();
+
+        OnImGuiEnd();
+    }
+
+    void EditorLayer::OnImGuiBegin()
     {
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
@@ -59,7 +105,7 @@ namespace Flameberry
         ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
     }
 
-    void ImGuiLayer::OnEnd()
+    void EditorLayer::OnImGuiEnd()
     {
         ImGuiIO& io = ImGui::GetIO();
         Application& app = Application::GetApp();
@@ -78,7 +124,7 @@ namespace Flameberry
         }
     }
 
-    void ImGuiLayer::SetDarkThemeColors()
+    void EditorLayer::SetDarkThemeColors()
     {
         auto& colors = ImGui::GetStyle().Colors;
         colors[ImGuiCol_WindowBg] = ImVec4{ 0.1f, 0.105f, 0.11f, 1.0f };

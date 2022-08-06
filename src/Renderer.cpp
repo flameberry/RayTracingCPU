@@ -34,10 +34,19 @@ namespace Flameberry {
 
     uint32_t Renderer::CalculatePixelColor(int x, int y)
     {
-        Flameberry::Ray ray(m_CameraPos, m_BottomLeft + glm::vec3{ x * 2.0f * m_AspectRatio / (m_RenderImageSize.x - 1.0f), y * 2.0f / (m_RenderImageSize.y - 1.0f), 0.0f });
-        Sphere sphere({ 0.0f, 0.0f, 0.0f }, 0.5f);
-        uint32_t color = ToHex(sphere.Hit(ray));
-        return color;
+        // Ray ray(m_CameraPos, m_BottomLeft + glm::vec3{ x * 2.0f * m_AspectRatio / (m_RenderImageSize.x - 1.0f), y * 2.0f / (m_RenderImageSize.y - 1.0f), 0.0f });
+        // Sphere sphere({ 0.0f, 0.0f, 0.0f }, 0.5f);
+        // uint32_t color = ToHex(sphere.Hit(ray));
+        // return color;
+
+        glm::vec4 pixelColor{ 1.0f };
+        Ray ray(m_CameraPos, m_BottomLeft + glm::vec3{ x * 2.0f * m_AspectRatio / (m_RenderImageSize.x - 1.0f), y * 2.0f / (m_RenderImageSize.y - 1.0f), 0.0f });
+        for (const auto& hittable : m_HittableObjects)
+        {
+            if (hittable->Hit(ray, pixelColor))
+                return ToHex(pixelColor);
+        }
+        return BLACK;
     }
 
     void Renderer::Render(const glm::vec2& imageSize)
@@ -78,5 +87,6 @@ namespace Flameberry {
         glGenerateMipmap(GL_TEXTURE_2D);
 
         delete[] m_RenderImageData;
+        m_HittableObjects.clear();
     }
 }

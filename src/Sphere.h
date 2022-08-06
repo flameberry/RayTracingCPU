@@ -4,14 +4,14 @@
 #include "Hittable.h"
 
 namespace Flameberry {
-    class Sphere
+    class Sphere : public Hittable
     {
     public:
+        static std::shared_ptr<Sphere> Create(const glm::vec3& center, float radius, const glm::vec3& color = { 1, 0, 1 });
         Sphere(const glm::vec3& center, float radius, const glm::vec3& color = { 1, 0, 1 });
         ~Sphere();
 
-        // returns sphere color if ray has hit the sphere else returns black
-        glm::vec4 Hit(Ray& ray);
+        bool Hit(Ray& ray, glm::vec4& outColor) override;
         void SetColor(const glm::vec3& color) { m_SphereColor = color; }
     private:
         glm::vec3 m_Center;

@@ -9,7 +9,7 @@ namespace Flameberry
     {
     }
 
-    glm::vec4 Sphere::Hit(Ray& ray)
+    bool Sphere::Hit(Ray& ray, glm::vec4& outColor)
     {
         static float a, b, c, determinant;
         a = glm::dot(ray.direction(), ray.direction());
@@ -20,7 +20,7 @@ namespace Flameberry
 
         // return if ray doesn't hit sphere
         if (determinant < 0)
-            return glm::vec4(0, 0, 0, 1);
+            return false;
 
         float t1 = (-b + sqrt(determinant)) / (2.0f * a);
         float t2 = (-b - sqrt(determinant)) / (2.0f * a);
@@ -33,11 +33,16 @@ namespace Flameberry
         glm::vec3 lightDir = glm::normalize(glm::vec3(-1, -1, -1));
 
         float d = glm::max(glm::dot(normal, -lightDir), 0.0f); // == cos(x) // x = angle between normal and -lightDir
-        m_SphereColor *= d;
-        return { m_SphereColor, 1.0f };
+        outColor = { m_SphereColor * d, 1.0f };
+        return true;
     }
 
     Sphere::~Sphere()
     {
+    }
+
+    std::shared_ptr<Sphere> Sphere::Create(const glm::vec3& center, float radius, const glm::vec3& color)
+    {
+        return std::make_shared<Sphere>(center, radius, color);
     }
 }
