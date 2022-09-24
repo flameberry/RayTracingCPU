@@ -13,7 +13,7 @@ namespace Flameberry {
     {
     public:
         Camera() = default;
-        Camera(const CameraInfo& ccameraInfo);
+        Camera(const CameraInfo& cameraInfo);
         ~Camera();
         void SetAspectRatio(float aspectRatio) { m_AspectRatio = aspectRatio; }
         void SetCameraPosition(const glm::vec3& position) { m_CameraOrigin = position; }

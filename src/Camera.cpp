@@ -1,12 +1,12 @@
 #include "Camera.h"
 
 namespace Flameberry {
-    Camera::Camera(const CameraInfo& ccameraInfo)
-        : m_AspectRatio(ccameraInfo.aspectRatio),
-        m_VerticalFOV(ccameraInfo.verticalFOV),
-        m_CameraOrigin(ccameraInfo.cameraOrigin),
-        m_CameraDirection(glm::normalize(ccameraInfo.cameraDirection)),
-        m_UpDir(ccameraInfo.upDir)
+    Camera::Camera(const CameraInfo& cameraInfo)
+        : m_AspectRatio(cameraInfo.aspectRatio),
+        m_VerticalFOV(cameraInfo.verticalFOV),
+        m_CameraOrigin(cameraInfo.cameraOrigin),
+        m_CameraDirection(glm::normalize(cameraInfo.cameraDirection)),
+        m_UpDir(cameraInfo.upDir)
     {
         Invalidate();
     }
