@@ -14,13 +14,12 @@ namespace Flameberry {
     {
         CameraInfo cameraInfo{};
         cameraInfo.aspectRatio = m_ViewportWidth / m_ViewportHeight;
-        cameraInfo.verticalFOV = 60.0f;
+        cameraInfo.verticalFOV = 45.0f;
         cameraInfo.cameraOrigin = glm::vec3(0, 0, 1);
         cameraInfo.cameraDirection = glm::vec3(0, 0, -1);
         cameraInfo.upDir = glm::vec3(0, 1, 0);
 
-        m_Camera = Camera(cameraInfo);
-        m_CameraSettingsPanel = CameraSettingsPanel(cameraInfo);
+        m_ActiveCamera = Camera(cameraInfo);
     }
 
     EditorLayer::~EditorLayer()
@@ -62,6 +61,8 @@ namespace Flameberry {
         ImGui_ImplOpenGL3_Init("#version 410");
 
         m_CoreRenderer = std::make_shared<Renderer>();
+        m_CoreRenderer->SetActiveScene(&m_ActiveScene);
+        m_CoreRenderer->SetActiveCamera(&m_ActiveCamera);
     }
 
     void EditorLayer::OnDetach()
@@ -70,6 +71,11 @@ namespace Flameberry {
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
         ImGui::DestroyContext();
+    }
+
+    void EditorLayer::OnUpdate(float delta)
+    {
+        m_ActiveCamera.OnUpdate(delta);
     }
 
     void EditorLayer::OnImGuiRender()
@@ -89,8 +95,6 @@ namespace Flameberry {
         ImGui::ColorPicker4("Sphere Color", m_SphereColor);
         ImGui::End();
 
-        m_CameraSettingsPanel.OnImGuiRender();
-
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
         ImGui::Begin("Viewport");
         if (realTimeRendering || shouldRender)
@@ -100,14 +104,13 @@ namespace Flameberry {
             m_ViewportWidth = ImGui::GetContentRegionAvail().x;
             m_ViewportHeight = ImGui::GetContentRegionAvail().y;
 
-            m_Camera.SetAspectRatio((float)m_ViewportWidth / (float)m_ViewportHeight);
-            m_Camera.SetCameraPosition(m_CameraSettingsPanel.GetCameraPosition());
-            m_Camera.SetVerticalFOV(m_CameraSettingsPanel.GetCameraFOV());
-            m_Camera.Invalidate();
+            m_ActiveCamera.SetAspectRatio((float)m_ViewportWidth / (float)m_ViewportHeight);
+            m_ActiveCamera.Invalidate();
 
-            m_CoreRenderer->Add(Sphere::Create({ 0.0f, 0.0f, 0.0f }, 0.2f, glm::vec4(m_SphereColor[0], m_SphereColor[1], m_SphereColor[2], m_SphereColor[3])));
-            m_CoreRenderer->Add(Sphere::Create({ 0.0f, -100.5f, 0.0f }, 100.0f));
-            m_CoreRenderer->Render({ m_ViewportWidth, m_ViewportHeight }, m_Camera);
+            Scene scene;
+            scene.Spheres.push_back(Sphere({ 0.0f, 0.0f, 0.0f }, 0.2f, glm::vec4(m_SphereColor[0], m_SphereColor[1], m_SphereColor[2], m_SphereColor[3])));
+            scene.Spheres.push_back(Sphere({ 0.0f, -100.5f, 0.0f }, 100.0f));
+            m_CoreRenderer->Render({ m_ViewportWidth, m_ViewportHeight }, &scene);
 
             renderTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - start).count();
         }

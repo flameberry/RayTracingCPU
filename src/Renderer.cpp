@@ -32,16 +32,16 @@ namespace Flameberry {
         glDeleteTextures(1, &m_RenderImageTextureId);
     }
 
-    uint32_t Renderer::CalculatePixelColor(int x, int y, const Camera& camera)
+    uint32_t Renderer::PerPixel(int x, int y)
     {
-        float closest_t = std::numeric_limits<float>::infinity();
+        float closest_t = FLT_MAX;
         bool hitAnything = false;
 
         glm::vec4 pixelColor{ 1.0f };
-        Ray ray = camera.GetRay((float)x / (m_RenderImageSize.x - 1.0f), (float)y / (m_RenderImageSize.y - 1.0f));
-        for (const auto& hittable : m_HittableObjects)
+        Ray ray = m_ActiveCamera->GetRay((float)x / (m_RenderImageSize.x - 1.0f), (float)y / (m_RenderImageSize.y - 1.0f));
+        for (const auto& sphere : m_ActiveScene->Spheres)
         {
-            if (hittable->Hit(ray, pixelColor, closest_t))
+            if (sphere.Hit(ray, pixelColor, closest_t))
                 hitAnything = true;
         }
         if (hitAnything)
@@ -49,27 +49,18 @@ namespace Flameberry {
         return BLACK;
     }
 
-    void Renderer::Render(const glm::vec2& imageSize, const Camera& camera)
+    void Renderer::Render(const glm::vec2& imageSize, Scene* scene)
     {
+        m_ActiveScene = scene;
         m_RenderImageSize = imageSize;
         m_RenderImageData = new uint32_t[m_RenderImageSize.x * m_RenderImageSize.y];
         m_AspectRatio = m_RenderImageSize.x / m_RenderImageSize.y;
 
         // Working with pixel data
-        uint32_t x = 0, y = 0;
-        for (uint32_t i = 0; i < m_RenderImageSize.x * m_RenderImageSize.y; i++)
+        for (uint32_t y = 0; y < m_RenderImageSize.y; y++)
         {
-            if (i == m_RenderImageSize.x * (y + 1))
-            {
-                y++;
-                x = 0;
-            }
-
-            // Actual calculation of pixel data
-            m_RenderImageData[i] = CalculatePixelColor(x, y, camera);
-            // -------------------------
-
-            x++;
+            for (uint32_t x = 0; x < m_RenderImageSize.x; x++)
+                m_RenderImageData[(size_t)(x + y * m_RenderImageSize.x)] = PerPixel(x, y);
         }
 
         glActiveTexture(GL_TEXTURE0);
@@ -86,6 +77,5 @@ namespace Flameberry {
         glGenerateMipmap(GL_TEXTURE_2D);
 
         delete[] m_RenderImageData;
-        m_HittableObjects.clear();
     }
 }

@@ -20,10 +20,12 @@ namespace Flameberry {
         void SetVerticalFOV(float fov) { m_VerticalFOV = fov; }
         Ray GetRay(float s, float t) const;
         void Invalidate();
-    private:
+        void OnUpdate(float delta);
     private:
         float m_AspectRatio, m_VerticalFOV;
-        glm::vec3 m_CameraOrigin, m_CameraDirection, m_UpDir, m_BottomLeft, m_Horizontal, m_Vertical;
+        glm::vec3 m_CameraOrigin, m_ForwardDirection, m_UpDir, m_RightDirection, m_BottomLeft, m_Horizontal, m_Vertical;
         glm::vec2 m_ViewportSize;
+
+        glm::vec2 m_LastMousePosition;
     };
 }

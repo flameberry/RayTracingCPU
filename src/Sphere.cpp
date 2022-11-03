@@ -9,7 +9,7 @@ namespace Flameberry
     {
     }
 
-    bool Sphere::Hit(Ray& ray, glm::vec4& outColor, float& closest_t)
+    bool Sphere::Hit(Ray& ray, glm::vec4& outColor, float& closest_t) const
     {
         static float a, b, c, determinant;
         a = glm::dot(ray.direction(), ray.direction());
@@ -22,10 +22,9 @@ namespace Flameberry
         if (determinant < 0)
             return false;
 
-        // float t = (-b + sqrt(determinant)) / (2.0f * a);
         float t = (-b - sqrt(determinant)) / (2.0f * a);
 
-        if (t > closest_t || t < 0)
+        if (t < 0 || t > closest_t)
             return false;
         closest_t = t;
 
@@ -41,10 +40,5 @@ namespace Flameberry
 
     Sphere::~Sphere()
     {
-    }
-
-    std::shared_ptr<Sphere> Sphere::Create(const glm::vec3& center, float radius, const glm::vec3& color)
-    {
-        return std::make_shared<Sphere>(center, radius, color);
     }
 }

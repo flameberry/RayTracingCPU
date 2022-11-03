@@ -1,22 +1,32 @@
 #pragma once
+
 #include <glm/glm.hpp>
-#include "Hittable.h"
 #include <memory>
 #include <vector>
+
 #include "Camera.h"
+#include "Scene.h"
 
 namespace Flameberry {
+    struct HitPayload
+    {
+        float HitDistance;
+        uint32_t ObjectIndex;
+    };
+
     class Renderer
     {
     public:
         Renderer();
         ~Renderer();
-        void Render(const glm::vec2& imageSize, const Camera& camera);
+        void Render(const glm::vec2& imageSize, Scene* scene);
         uint32_t GetRenderImageTextureId() { return m_RenderImageTextureId; }
         glm::vec2& GetRenderImageSize() { return m_RenderImageSize; }
-        void Add(const std::shared_ptr<Hittable>& hittable) { m_HittableObjects.push_back(hittable); }
+
+        void SetActiveScene(Scene* activeScene) { m_ActiveScene = activeScene; }
+        void SetActiveCamera(Camera* activeCamera) { m_ActiveCamera = activeCamera; }
     private:
-        uint32_t CalculatePixelColor(int x, int y, const Camera& camera);
+        uint32_t PerPixel(int x, int y);
     private:
         glm::vec3 m_CameraPos, m_BottomLeft;
         float m_AspectRatio;
@@ -26,7 +36,7 @@ namespace Flameberry {
         glm::vec2 m_RenderImageSize;
 
         glm::vec2 m_ViewportSize;
-
-        std::vector<std::shared_ptr<Hittable>> m_HittableObjects;
+        Scene* m_ActiveScene;
+        Camera* m_ActiveCamera;
     };
 }
