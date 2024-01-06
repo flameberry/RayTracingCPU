@@ -4,6 +4,8 @@ project(RayTracing VERSION 0.1.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED On)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 set(SOURCE_DIR ${CMAKE_SOURCE_DIR})
 
 include(Dependencies.cmake)
@@ -14,6 +16,7 @@ enable_testing()
 
 file(GLOB_RECURSE SRC_FILES ${SOURCE_DIR}/src/*.cpp ${SOURCE_DIR}/src/*.h)
 add_executable(RayTracing ${SRC_FILES} ${IMGUI_SRC})
+target_compile_features(RayTracing PUBLIC cxx_std_17)
 
 set_custom_build_properties(RayTracing)
 

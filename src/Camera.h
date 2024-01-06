@@ -6,7 +6,7 @@ namespace Flameberry {
     struct CameraInfo
     {
         float aspectRatio, verticalFOV;
-        glm::vec3 cameraOrigin, cameraDirection, upDir;
+        glm::vec3 cameraOrigin, cameraDirection;
     };
 
     class Camera
@@ -19,8 +19,10 @@ namespace Flameberry {
         void SetCameraPosition(const glm::vec3& position) { m_CameraOrigin = position; }
         void SetVerticalFOV(float fov) { m_VerticalFOV = fov; }
         Ray GetRay(float s, float t) const;
+        bool OnUpdate(float delta);
+        void OnResize(float aspectRatio);
+    private:
         void Invalidate();
-        void OnUpdate(float delta);
     private:
         float m_AspectRatio, m_VerticalFOV;
         glm::vec3 m_CameraOrigin, m_ForwardDirection, m_UpDir, m_RightDirection, m_BottomLeft, m_Horizontal, m_Vertical;

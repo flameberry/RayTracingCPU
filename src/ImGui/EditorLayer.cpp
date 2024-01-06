@@ -1,25 +1,135 @@
 #include "EditorLayer.h"
+
+#include <iostream>
+#include <chrono>
+#include <glad/glad.h>
 #include <imgui.h>
 #include <backends/imgui_impl_opengl3.h>
 #include <backends/imgui_impl_glfw.h>
-#include "../Application.h"
-#include <glad/glad.h>
-#include "../Sphere.h"
-#include <chrono>
 #include <imgui/imgui_internal.h>
+#include <glm/gtc/type_ptr.hpp>
+
+#include "../Application.h"
+#include "../Sphere.h"
+
+namespace Utils {
+    void DrawVec3Control(const std::string& str_id, glm::vec3& value, float defaultValue, float dragSpeed, float availWidth)
+    {
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0);
+
+        float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+        ImVec2 buttonSize = { lineHeight + 3.0f, lineHeight };
+
+        ImGuiIO& io = ImGui::GetIO();
+        // auto boldFont = io.Fonts->Fonts[0];
+
+        ImGui::PushID(str_id.c_str());
+
+        ImGui::PushMultiItemsWidths(3, ceil(availWidth + 7.0f - 3 * buttonSize.x));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 0, 0 });
+
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.9f, 0.2f, 0.2f, 1.0f });
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
+
+        // ImGui::PushFont(boldFont);
+        if (ImGui::Button("X", buttonSize))
+            value.x = defaultValue;
+        // ImGui::PopFont();
+        ImGui::PopStyleColor(3);
+
+        ImGui::SameLine();
+        ImGui::DragFloat("##X", &value.x, dragSpeed, 0.0f, 0.0f, "%.2f");
+        ImGui::PopItemWidth();
+        ImGui::SameLine();
+
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.3f, 0.8f, 0.3f, 1.0f });
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
+
+        // ImGui::PushFont(boldFont);
+        if (ImGui::Button("Y", buttonSize))
+            value.y = defaultValue;
+        // ImGui::PopFont();
+        ImGui::PopStyleColor(3);
+
+        ImGui::SameLine();
+        ImGui::DragFloat("##Y", &value.y, dragSpeed, 0.0f, 0.0f, "%.2f");
+        ImGui::PopItemWidth();
+        ImGui::SameLine();
+
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.2f, 0.35f, 0.9f, 1.0f });
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
+
+        // ImGui::PushFont(boldFont);
+        if (ImGui::Button("Z", buttonSize))
+            value.z = defaultValue;
+        // ImGui::PopFont();
+        ImGui::PopStyleColor(3);
+
+        ImGui::SameLine();
+        ImGui::DragFloat("##Z", &value.z, dragSpeed, 0.0f, 0.0f, "%.2f");
+        ImGui::PopItemWidth();
+        ImGui::PopStyleVar();
+
+        ImGui::PopID();
+        ImGui::PopStyleVar();
+    }
+}
 
 namespace Flameberry {
     EditorLayer::EditorLayer()
         : m_ViewportWidth(500), m_ViewportHeight(500)
     {
+        int maxSamples;
+        glGetIntegerv(GL_MAX_SAMPLES, &maxSamples);
+        std::cout << maxSamples << "\n";
+
         CameraInfo cameraInfo{};
         cameraInfo.aspectRatio = m_ViewportWidth / m_ViewportHeight;
-        cameraInfo.verticalFOV = 45.0f;
-        cameraInfo.cameraOrigin = glm::vec3(0, 0, 1);
+        cameraInfo.verticalFOV = 32.0f;
+        // cameraInfo.verticalFOV = 39.6f;
+        cameraInfo.cameraOrigin = glm::vec3(0, 0, 4);
         cameraInfo.cameraDirection = glm::vec3(0, 0, -1);
-        cameraInfo.upDir = glm::vec3(0, 1, 0);
 
         m_ActiveCamera = Camera(cameraInfo);
+
+        Material pinkMaterial;
+        pinkMaterial.Albedo = { 1.0f, 0.0f, 1.0f };
+        Material blueMaterial;
+        blueMaterial.Albedo = { 0.2f, 0.3f, 1.0f };
+        blueMaterial.Roughness = 1.0f;
+        Material yellowEmissive;
+        yellowEmissive.Albedo = { 0.8f, 0.5f, 0.2f };
+        yellowEmissive.Roughness = 1.0f;
+        yellowEmissive.EmissionColor = yellowEmissive.Albedo;
+        yellowEmissive.EmissionPower = 1.5f;
+
+        m_ActiveScene.Materials.push_back(pinkMaterial);
+        m_ActiveScene.Materials.push_back(blueMaterial);
+        m_ActiveScene.Materials.push_back(yellowEmissive);
+        {
+            Sphere sphere;
+            sphere.Center = { 0.0f, 0.0f, 0.0f };
+            sphere.Radius = 0.5f;
+            sphere.MaterialIndex = 0;
+            m_ActiveScene.Spheres.push_back(sphere);
+        }
+        {
+            Sphere sphere;
+            sphere.Center = { 0.0f, -100.5f, 0.0f };
+            sphere.Radius = 100.0f;
+            sphere.MaterialIndex = 1;
+            m_ActiveScene.Spheres.push_back(sphere);
+        }
+        {
+            Sphere sphere;
+            sphere.Center = { 1.0f, 0.0f, 0.0f };
+            sphere.Radius = 0.5f;
+            sphere.MaterialIndex = 2;
+            m_ActiveScene.Spheres.push_back(sphere);
+        }
     }
 
     EditorLayer::~EditorLayer()
@@ -39,8 +149,8 @@ namespace Flameberry {
         //io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoTaskBarIcons;
         //io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoMerge;
 
-        float fontSize = 15.0f;// *2.0f;
-        io.Fonts->AddFontFromFileTTF("/Users/flameberry/Developer/RayTracing/assets/fonts/OpenSans-Regular.ttf", fontSize);
+        // float fontSize = 15.0f;// *2.0f;
+        // io.Fonts->AddFontFromFileTTF("/Users/flameberry/Developer/RayTracing/assets/fonts/OpenSans-Regular.ttf", fontSize);
         // io.FontDefault = io.Fonts->AddFontFromFileTTF(FL_PROJECT_DIR"Flameberry/assets/fonts/opensans/OpenSans-Regular.ttf", fontSize);
 
         // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
@@ -75,7 +185,8 @@ namespace Flameberry {
 
     void EditorLayer::OnUpdate(float delta)
     {
-        m_ActiveCamera.OnUpdate(delta);
+        if (m_ActiveCamera.OnUpdate(delta))
+            m_CoreRenderer->ResetFrameIndex();
     }
 
     void EditorLayer::OnImGuiRender()
@@ -86,13 +197,46 @@ namespace Flameberry {
         static float renderTime = 0.0f;
         static bool realTimeRendering = true;
 
+        ImGui::Begin("Scene");
+        ImGui::Text("Spheres");
+        for (uint32_t i = 0; i < m_ActiveScene.Spheres.size(); i++)
+        {
+            ImGui::PushID(i);
+            auto& sphere = m_ActiveScene.Spheres[i];
+            Utils::DrawVec3Control("Position", sphere.Center, 0.0f, 0.005f, ImGui::GetContentRegionAvail().x);
+            ImGui::Spacing();
+            ImGui::DragFloat("Radius", &sphere.Radius, 0.005f, 0.0f, FLT_MAX);
+            ImGui::Separator();
+            ImGui::PopID();
+        }
+        ImGui::Separator();
+        ImGui::Text("Materials");
+
+        for (uint32_t i = 0; i < m_ActiveScene.Materials.size(); i++)
+        {
+            ImGui::PushID(i);
+            ImGui::ColorEdit3("Albedo", glm::value_ptr(m_ActiveScene.Materials[i].Albedo));
+            ImGui::DragFloat("Roughness", &m_ActiveScene.Materials[i].Roughness, 0.005f);
+            ImGui::ColorEdit3("Emission Color", glm::value_ptr(m_ActiveScene.Materials[i].EmissionColor));
+            ImGui::DragFloat("Emission Power", &m_ActiveScene.Materials[i].EmissionPower, 0.05f);
+            ImGui::PopID();
+
+            ImGui::Separator();
+        }
+        ImGui::End();
+
         ImGui::Begin("Settings");
         ImGui::Text("Last render: %.3fms", renderTime * 0.001f * 0.001f);
         ImGui::Checkbox("Real Time Rendering ", &realTimeRendering);
         if (!realTimeRendering)
             shouldRender = ImGui::Button("Render");
+
+        ImGui::Checkbox("Accumulate", &(m_CoreRenderer->GetSettings().Accumulate));
+        ImGui::Checkbox("MultiThread", &(m_CoreRenderer->GetSettings().MultiThread));
+        if (ImGui::Button("Reset"))
+            m_CoreRenderer->ResetFrameIndex();
+
         ImGui::Separator();
-        ImGui::ColorPicker4("Sphere Color", m_SphereColor);
         ImGui::End();
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
@@ -104,14 +248,9 @@ namespace Flameberry {
             m_ViewportWidth = ImGui::GetContentRegionAvail().x;
             m_ViewportHeight = ImGui::GetContentRegionAvail().y;
 
-            m_ActiveCamera.SetAspectRatio((float)m_ViewportWidth / (float)m_ViewportHeight);
-            m_ActiveCamera.Invalidate();
+            m_ActiveCamera.OnResize((float)m_ViewportWidth / (float)m_ViewportHeight);
 
-            Scene scene;
-            scene.Spheres.push_back(Sphere({ 0.0f, 0.0f, 0.0f }, 0.2f, glm::vec4(m_SphereColor[0], m_SphereColor[1], m_SphereColor[2], m_SphereColor[3])));
-            scene.Spheres.push_back(Sphere({ 0.0f, -100.5f, 0.0f }, 100.0f));
-            m_CoreRenderer->Render({ m_ViewportWidth, m_ViewportHeight }, &scene);
-
+            m_CoreRenderer->Render({ m_ViewportWidth, m_ViewportHeight }, &m_ActiveScene);
             renderTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - start).count();
         }
         ImGui::Image(

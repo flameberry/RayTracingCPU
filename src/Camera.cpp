@@ -13,12 +13,21 @@ namespace Flameberry {
         m_VerticalFOV(cameraInfo.verticalFOV),
         m_CameraOrigin(cameraInfo.cameraOrigin),
         m_ForwardDirection(glm::normalize(cameraInfo.cameraDirection)),
-        m_UpDir(cameraInfo.upDir)
+        m_UpDir(glm::vec3(0, 1, 0))
     {
         Invalidate();
     }
 
-    void Camera::OnUpdate(float delta)
+    void Camera::OnResize(float aspectRatio)
+    {
+        if (m_AspectRatio != aspectRatio)
+        {
+            m_AspectRatio = aspectRatio;
+            Invalidate();
+        }
+    }
+
+    bool Camera::OnUpdate(float delta)
     {
         glm::vec2 mousePos = Input::GetCursorPosition();
         glm::vec2 rotationDelta = (mousePos - m_LastMousePosition) * 0.002f;
@@ -27,7 +36,7 @@ namespace Flameberry {
         if (!Input::IsMouseButton(GLFW_MOUSE_BUTTON_RIGHT, GLFW_PRESS))
         {
             Input::SetCursorMode(GLFW_CURSOR_NORMAL);
-            return;
+            return false;
         }
 
         Input::SetCursorMode(GLFW_CURSOR_DISABLED);
@@ -57,12 +66,12 @@ namespace Flameberry {
         }
         if (Input::IsKey(GLFW_KEY_Q, GLFW_PRESS))
         {
-            m_CameraOrigin += m_UpDir * speed * delta;
+            m_CameraOrigin -= m_UpDir * speed * delta;
             moved = true;
         }
         if (Input::IsKey(GLFW_KEY_E, GLFW_PRESS))
         {
-            m_CameraOrigin -= m_UpDir * speed * delta;
+            m_CameraOrigin += m_UpDir * speed * delta;
             moved = true;
         }
 
@@ -81,6 +90,8 @@ namespace Flameberry {
 
         if (moved)
             Invalidate();
+
+        return moved;
     }
 
     void Camera::Invalidate()

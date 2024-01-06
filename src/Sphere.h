@@ -3,17 +3,18 @@
 #include "Ray.h"
 
 namespace Flameberry {
-    class Sphere
+    struct Material
     {
-    public:
-        Sphere(const glm::vec3& center, float radius, const glm::vec3& color = { 1, 0, 1 });
-        ~Sphere();
+        glm::vec3 Albedo{ 1.0f };
+        float Roughness = 0.0f;
+        glm::vec3 EmissionColor{ 1.0f };
+        float EmissionPower = 0.0f;
+    };
 
-        bool Hit(Ray& ray, glm::vec4& outColor, float& closest_t) const;
-        void SetColor(const glm::vec3& color) { m_SphereColor = color; }
-    private:
-        glm::vec3 m_Center;
-        float m_Radius;
-        glm::vec3 m_SphereColor;
+    struct Sphere
+    {
+        glm::vec3 Center;
+        float Radius;
+        int MaterialIndex;
     };
 }

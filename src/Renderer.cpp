@@ -1,11 +1,10 @@
 #include "Renderer.h"
-#include <glad/glad.h>
-#include "Sphere.h"
-#include <iostream>
 
-#define YELLOW 0xffff00ff
-#define PINK   0xff00ffff
-#define BLACK  0x000000ff
+#include <iostream>
+#include <glad/glad.h>
+
+#include "Sphere.h"
+#include "Random.h"
 
 void printVec(const glm::vec3& vec)
 {
@@ -20,10 +19,9 @@ uint32_t ToHex(const glm::vec4& color_in_vec4)
 
 namespace Flameberry {
     Renderer::Renderer()
-        : m_RenderImageTextureId(0), m_RenderImageData(nullptr), m_RenderImageSize(500, 500), m_CameraPos(0.0f, 0.0f, 1.0f)
+        : m_RenderImageTextureId(0), m_RenderImageData(nullptr), m_AccumulatedRenderImageData(nullptr), m_RenderImageSize(500, 500)
     {
         m_AspectRatio = m_RenderImageSize.x / m_RenderImageSize.y;
-        m_BottomLeft = { -m_AspectRatio, -1.0f, -1.0f };
         glGenTextures(1, &m_RenderImageTextureId);
     }
 
@@ -32,35 +30,129 @@ namespace Flameberry {
         glDeleteTextures(1, &m_RenderImageTextureId);
     }
 
-    uint32_t Renderer::PerPixel(int x, int y)
+    glm::vec4 Renderer::PerPixel(int x, int y)
+    {
+        glm::vec3 colorContrib(1.0f);
+        glm::vec3 finalColor{ 0.0f };
+
+        Ray ray = m_ActiveCamera->GetRay((float)x / m_RenderImageSize.x, (float)y / m_RenderImageSize.y);
+
+        int bounces = 5;
+        for (uint32_t i = 0; i < bounces; i++)
+        {
+            HitPayload payload = TraceRay(ray);
+
+            if (payload.HitDistance < 0.0f)
+            {
+                glm::vec3 skyColor{ 0.6f, 0.7f, 0.9f };
+                // glm::vec3 skyColor{ 0.0f, 0.0f, 0.0f };
+                finalColor += skyColor * colorContrib;
+                break;
+            }
+
+            glm::vec3 lightDir = glm::normalize(glm::vec3(-1, -1, -1));
+            float lightIntensity = glm::max(glm::dot(payload.WorldNormal, -lightDir), 0.0f); // == cos(x) // x = angle between normal and -lightDir
+
+            Sphere& sphere = m_ActiveScene->Spheres[payload.ObjectIndex];
+            Material& material = m_ActiveScene->Materials[sphere.MaterialIndex];
+
+            colorContrib *= material.Albedo;
+            // finalColor += material.Albedo * lightIntensity * colorContrib;
+            finalColor += material.EmissionColor * material.EmissionPower;
+
+            ray.Origin = payload.WorldPosition + payload.WorldNormal * 0.0001f;
+
+            // ray.Direction = glm::reflect(ray.Direction, payload.WorldNormal + material.Roughness * randomDir);
+            ray.Direction = glm::reflect(ray.Direction, payload.WorldNormal + Random::InUnitSphere());
+        }
+        return { finalColor, 1.0f };
+    }
+
+    HitPayload Renderer::TraceRay(const Ray& ray)
     {
         float closest_t = FLT_MAX;
         bool hitAnything = false;
+        uint32_t sphereIndex;
 
-        glm::vec4 pixelColor{ 1.0f };
-        Ray ray = m_ActiveCamera->GetRay((float)x / (m_RenderImageSize.x - 1.0f), (float)y / (m_RenderImageSize.y - 1.0f));
-        for (const auto& sphere : m_ActiveScene->Spheres)
+        for (uint32_t i = 0; i < m_ActiveScene->Spheres.size(); i++)
         {
-            if (sphere.Hit(ray, pixelColor, closest_t))
-                hitAnything = true;
+            Sphere& sphere = m_ActiveScene->Spheres[i];
+            float a, b, c, determinant;
+            a = glm::dot(ray.Direction, ray.Direction);
+            b = 2 * glm::dot(ray.Direction, ray.Origin - sphere.Center);
+            c = glm::dot(ray.Origin - sphere.Center, ray.Origin - sphere.Center) - sphere.Radius * sphere.Radius;
+
+            determinant = b * b - 4 * a * c;
+
+            // return if ray doesn't hit sphere
+            if (determinant < 0)
+                continue;
+
+            float t = (-b - glm::sqrt(determinant)) / (2.0f * a);
+            if (t < 0.0f || t > closest_t)
+                continue;
+
+            closest_t = t;
+            sphereIndex = i;
+            hitAnything = true;
         }
-        if (hitAnything)
-            return ToHex(pixelColor);
-        return BLACK;
+
+        if (hitAnything && closest_t > 0.0f)
+        {
+            HitPayload payload;
+            payload.WorldPosition = ray.Origin + closest_t * ray.Direction;
+            payload.HitDistance = closest_t;
+            payload.WorldNormal = glm::normalize(payload.WorldPosition - m_ActiveScene->Spheres[sphereIndex].Center);
+            payload.ObjectIndex = sphereIndex;
+            return payload;
+        }
+        return HitPayload{ .HitDistance = -1.0f };
     }
 
     void Renderer::Render(const glm::vec2& imageSize, Scene* scene)
     {
         m_ActiveScene = scene;
-        m_RenderImageSize = imageSize;
-        m_RenderImageData = new uint32_t[m_RenderImageSize.x * m_RenderImageSize.y];
+        bool allocated = false;
+        if (!m_RenderImageData || m_RenderImageSize != imageSize)
+        {
+            m_RenderImageSize = imageSize;
+            m_RenderImageData = new uint32_t[m_RenderImageSize.x * m_RenderImageSize.y];
+            m_AccumulatedRenderImageData = new glm::vec4[m_RenderImageSize.x * m_RenderImageSize.y];
+            allocated = true;
+
+            if (m_RenderSettings.MultiThread)
+            {
+                m_ImageHorizontalIter.resize(imageSize.x);
+                m_ImageVerticalIter.resize(imageSize.y);
+
+                for (uint32_t i = 0; i < imageSize.x; i++)
+                    m_ImageHorizontalIter[i] = i;
+                for (uint32_t i = 0; i < imageSize.y; i++)
+                    m_ImageVerticalIter[i] = i;
+            }
+        }
         m_AspectRatio = m_RenderImageSize.x / m_RenderImageSize.y;
 
-        // Working with pixel data
-        for (uint32_t y = 0; y < m_RenderImageSize.y; y++)
+        if (m_FrameIndex == 1)
+            memset(m_AccumulatedRenderImageData, 0, m_RenderImageSize.x * m_RenderImageSize.y * sizeof(glm::vec4));
+
+        if (m_RenderSettings.MultiThread)
+            assert(0);
+        else
         {
-            for (uint32_t x = 0; x < m_RenderImageSize.x; x++)
-                m_RenderImageData[(size_t)(x + y * m_RenderImageSize.x)] = PerPixel(x, y);
+            // Working with pixel data
+            for (uint32_t y = 0; y < m_RenderImageSize.y; y++)
+            {
+                for (uint32_t x = 0; x < m_RenderImageSize.x; x++)
+                {
+                    glm::vec4 color = PerPixel(x, y);
+                    m_AccumulatedRenderImageData[(size_t)(x + y * m_RenderImageSize.x)] += color;
+
+                    glm::vec4 accumulatedColor = m_AccumulatedRenderImageData[(size_t)(x + y * m_RenderImageSize.x)] / (float)m_FrameIndex;
+                    accumulatedColor = glm::clamp(accumulatedColor, glm::vec4(0.0f), glm::vec4(1.0f));
+                    m_RenderImageData[(size_t)(x + y * m_RenderImageSize.x)] = ToHex(accumulatedColor);
+                }
+            }
         }
 
         glActiveTexture(GL_TEXTURE0);
@@ -76,6 +168,12 @@ namespace Flameberry {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_RenderImageSize.x, m_RenderImageSize.y, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, m_RenderImageData);
         glGenerateMipmap(GL_TEXTURE_2D);
 
-        delete[] m_RenderImageData;
+        if (m_RenderSettings.Accumulate)
+            m_FrameIndex++;
+        else
+            m_FrameIndex = 1;
+
+        if (allocated)
+            delete[] m_RenderImageData;
     }
 }
